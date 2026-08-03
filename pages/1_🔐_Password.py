@@ -1,8 +1,11 @@
+import os
+import tempfile
 import streamlit as st
 
 from components.header import show_header
 from utils.state import initialize_state
 from services.password_service import authenticate
+
 
 st.set_page_config(
     page_title="Password",
@@ -20,25 +23,69 @@ st.write("Please say the password to unlock the Smart Home.")
 
 st.divider()
 
-if st.button(
-    "🎙 Record Password",
-    use_container_width=True
-):
 
-    with st.spinner("Listening..."):
+IS_STREAMLIT_CLOUD = True
 
-        result = authenticate()
 
-    if result.password_ok:
+if IS_STREAMLIT_CLOUD:
 
-        st.success(result.message)
+    audio = st.audio_input("🎤 Record Password")
 
-        st.session_state.authenticated = True
+    if audio is not None:
 
-    else:
+        st.success("Audio received successfully.")
 
-        st.error(result.message)
+        # Save browser audio temporarily as wav
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".wav"
+        ) as temp_audio:
 
-        st.session_state.authenticated = False
+            temp_audio.write(audio.read())
 
-    st.write("**Transcript:**", result.transcript)
+            audio_path = temp_audio.name
+
+
+        with st.spinner("Checking password..."):
+
+            result = authenticate(audio_path)
+
+
+        if result.password_ok:
+
+            st.success(result.message)
+            st.session_state.authenticated = True
+
+        else:
+
+            st.error(result.message)
+            st.session_state.authenticated = False
+
+
+        st.write("**Transcript:**", result.transcript)
+
+
+else:
+
+    if st.button(
+        "🎙 Record Password",
+        use_container_width=True
+    ):
+
+        with st.spinner("Listening..."):
+
+            result = authenticate()
+
+
+        if result.password_ok:
+
+            st.success(result.message)
+            st.session_state.authenticated = True
+
+        else:
+
+            st.error(result.message)
+            st.session_state.authenticated = False
+
+
+        st.write("**Transcript:**", result.transcript)

@@ -1,5 +1,3 @@
-from audio.recorder import record_audio
-
 from ai.predict import predict_voice
 
 from utils.data import set_recognition_result
@@ -12,26 +10,37 @@ from services.device_service import (
 )
 
 
-def start_listening():
+def start_listening(audio_path=None):
     """
     Main Voice Workflow
     """
 
     # ============================
-    # Step 1 : Record Audio
+    # Step 1 : Get Audio
     # ============================
 
-    audio_path = record_audio()
+    # Cloud mode
+    if audio_path is not None:
+        path = audio_path
+
+    # Local mode
+    else:
+        from audio.recorder import record_audio
+
+        path = record_audio()
+
 
     # ============================
     # Step 2 : AI Prediction
     # ============================
 
-    result = predict_voice(audio_path)
+    result = predict_voice(path)
+
 
     user = result["speaker"]
     command = result["command"]
     confidence = result["confidence"]
+
 
     # ============================
     # Step 3 : Save Result
@@ -42,6 +51,7 @@ def start_listening():
         command,
         confidence
     )
+
 
     # ============================
     # Step 4 : Execute Command
@@ -58,6 +68,7 @@ def start_listening():
 
     elif command == "music_off":
         turn_music_off()
+
 
     # ============================
     # Step 5 : Return Result
